@@ -1,0 +1,419 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#356f68">
+  <meta name="description" content="Convexa, comunicador visual accesible que funciona sin conexión.">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./icon.svg" type="image/svg+xml">
+  <title>Convexa · Mi comunicador</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #253c3b;
+      --blue: #356f68;
+      --sky: #e8f1ed;
+      --yellow: #e3c36b;
+      --pink: #d78a91;
+      --green: #7e9c78;
+      --purple: #9a8bb5;
+      --teal: #69a6a0;
+      --tile-yellow: #f2d879;
+      --tile-blue: #a9d8f4;
+      --tile-pink: #f0a3aa;
+      --tile-green: #b7dcb1;
+      --tile-purple: #d2b9ec;
+      --tile-orange: #f2bd87;
+      --line: #d9e2dd;
+      --surface: #fff;
+      --muted: #60736e;
+      --paper: #f4f3ec;
+      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; scroll-padding-top: 68px; }
+    body { position: relative; isolation: isolate; margin: 0; background: var(--paper); color: var(--ink); }
+    body::before { position: fixed; z-index: 0; inset: 0; background-image: var(--board-background-image, none); background-position: center; background-repeat: no-repeat; background-size: var(--board-background-size, cover); content: ""; opacity: var(--board-background-opacity, 1); pointer-events: none; }
+    button, input, select { font: inherit; }
+    button { color: inherit; cursor: pointer; }
+    button:focus-visible, input:focus-visible, select:focus-visible {
+      outline: 3px solid #bd6c52;
+      outline-offset: 2px;
+    }
+    .app { position: relative; z-index: 1; max-width: 1240px; min-height: 100dvh; margin: auto; background: transparent; box-shadow: 0 0 50px #253c3b0b; }
+    .topbar { position: sticky; top: 0; z-index: 2; display: flex; align-items: center; gap: 12px; padding: 10px 18px; background: #fdfcf8e8; border-bottom: 1px solid var(--line); backdrop-filter: blur(12px); }
+    .brand { color: var(--blue); font-size: 1.25rem; font-weight: 900; letter-spacing: .08em; }
+    .topbar .spacer { flex: 1; }
+    .connection { color: var(--muted); font-size: .82rem; }
+    .topbar button, .toolbar button, .action {
+      border: 0; border-radius: 12px; padding: 11px 14px; font-weight: 750;
+    }
+    .topbar button { background: #e9efea; color: var(--ink); }
+    .site-nav { position: sticky; top: 57px; z-index: 1; display: flex; gap: 7px; overflow-x: auto; padding: 9px 18px; background: #f7f6f0df; border-bottom: 1px solid var(--line); backdrop-filter: blur(10px); }
+    .site-nav button { flex: 0 0 auto; padding: 8px 12px; border: 0; border-radius: 999px; background: transparent; color: var(--ink); font-size: .9rem; font-weight: 700; }
+    .site-nav button:hover, .site-nav button:focus-visible, .site-nav button.active { background: #e6eee8; }
+    main { padding: 16px clamp(10px, 2.2vw, 24px) 34px; }
+    .welcome { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 12px; margin-bottom: 14px; padding: 10px 12px; border: 1px solid #79bfff; border-radius: 10px; background: #f8fafbb8; backdrop-filter: blur(5px); }
+    .welcome-home { min-width: 62px; min-height: 56px; border: 0; border-radius: 9px; background: #2586c9; color: white; font-weight: 800; }
+    .welcome-message { display: flex; min-width: 0; align-items: center; justify-content: center; gap: 12px; }
+    .welcome .face { display: grid; width: 58px; height: 58px; place-items: center; border-radius: 18px; background: #d7e5dc; font-size: 2rem; }
+    .welcome h1 { margin: 0; font-size: clamp(1.1rem, 3vw, 1.55rem); }
+    .welcome p { margin: 4px 0 0; color: var(--muted); }
+    .welcome-settings { display: flex; width: 62px; min-height: 56px; flex-direction: column; align-items: center; justify-content: center; gap: 1px; padding: 5px 3px; border: 1px solid #aebdc8; border-radius: 9px; background: #e9eff3; }
+    .welcome-settings .symbol { font-size: 1.4rem; line-height: 1; }
+    .welcome-settings .label { font-size: .68rem; font-weight: 750; line-height: 1.1; }
+    .board { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+    .board-more-title { grid-column: 1 / -1; margin: 14px 0 0; font-size: 1.15rem; }
+    .category { --cat: var(--yellow); min-width: 0; overflow: hidden; border: 2px solid color-mix(in srgb, var(--cat) 82%, white); border-radius: 13px; background: linear-gradient(180deg, color-mix(in srgb, var(--cat) 42%, #ffffff75), #ffffff75 42%); box-shadow: 0 3px 12px #253c3b0c; backdrop-filter: blur(2px); }
+    .category[data-color="pink"] { --cat: var(--pink); }
+    .category[data-color="green"] { --cat: var(--green); }
+    .category[data-color="blue"] { --cat: #79bfff; }
+    .category[data-color="purple"] { --cat: var(--purple); }
+    .category[data-color="teal"] { --cat: var(--teal); }
+    .category-head { display: flex; align-items: center; gap: 8px; padding: 7px 9px; background: color-mix(in srgb, var(--cat) 62%, #ffffff80); font-weight: 850; }
+    .category-head span:first-child { display: grid; width: 30px; height: 30px; place-items: center; border-radius: 9px; background: color-mix(in srgb, var(--cat) 55%, #ffffff80); font-size: 1rem; }
+    .category-head button { margin-left: auto; border: 0; background: transparent; font-size: 1.2rem; }
+    .tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px; padding: 6px; }
+    .category[data-category="Necesito"] .tiles,
+    .category[data-category="Personas"] .tiles,
+    .category[data-category="Escuela"] .tiles { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .tile { --tile-color: var(--tile-custom, var(--tile-yellow)); display: flex; min-width: 0; min-height: var(--tile-min-height, 76px); flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 6px 3px; border: 1px solid color-mix(in srgb, var(--tile-color) 85%, #806f56); border-radius: 9px; background: color-mix(in srgb, var(--tile-color) 64%, #ffffff85); text-align: center; transition: background .15s, transform .15s, box-shadow .15s; }
+    .tile:nth-child(6n + 2) { --tile-color: var(--tile-custom, var(--tile-blue)); }
+    .tile:nth-child(6n + 3) { --tile-color: var(--tile-custom, var(--tile-pink)); }
+    .tile:nth-child(6n + 4) { --tile-color: var(--tile-custom, var(--tile-green)); }
+    .tile:nth-child(6n + 5) { --tile-color: var(--tile-custom, var(--tile-purple)); }
+    .tile:nth-child(6n) { --tile-color: var(--tile-custom, var(--tile-orange)); }
+    :root[data-tile-shape="square"] .tile { border-radius: 3px; }
+    :root[data-tile-shape="circle"] .tile { border-radius: 999px; min-height: 76px; }
+    :root[data-tile-shape="rounded"] .tile { border-radius: 16px; }
+    :root[data-tile-size="small"] { --tile-min-height: 58px; --tile-symbol-size: 1.4rem; --tile-font-scale: .9; }
+    :root[data-tile-size="medium"] { --tile-min-height: 76px; --tile-symbol-size: 1.8rem; --tile-font-scale: 1; }
+    :root[data-tile-size="large"] { --tile-min-height: 104px; --tile-symbol-size: 2.3rem; --tile-font-scale: 1.15; }
+    .tile:hover, .tile:active { background: color-mix(in srgb, var(--tile-color) 76%, #ffffff75); box-shadow: 0 2px 8px #253c3b12; }
+    .tile:active { transform: scale(.97); }
+    .tile .symbol { font-size: var(--tile-symbol-size, 1.8rem); line-height: 1.1; }
+    .tile img { width: min(40px, 42%); max-height: 40px; object-fit: contain; }
+    .tile strong { max-width: 100%; overflow-wrap: anywhere; font-family: var(--tile-font-family, inherit); font-size: calc(var(--tile-font-size, .75rem) * var(--tile-font-scale, 1)); line-height: 1.1; }
+    .tile small { max-width: 100%; overflow-wrap: anywhere; color: #536979; font-family: var(--tile-font-family, inherit); font-size: calc(var(--tile-font-size, .75rem) * var(--tile-font-scale, 1) * .85); line-height: 1.1; }
+    .phrase-box { position: sticky; bottom: 8px; z-index: 1; margin-top: 14px; padding: 12px; border: 1px solid #d5dfd9; border-radius: 16px; background: #fdfcf8f5; box-shadow: 0 5px 22px #253c3b16; backdrop-filter: blur(12px); }
+    .phrase-box h2 { margin: 0 0 7px; font-size: 1rem; }
+    .phrase { display: flex; min-height: 52px; flex-wrap: wrap; align-items: center; gap: 6px; padding: 7px; border-radius: 11px; background: #f0f3ef; }
+    .phrase-item { display: flex; align-items: center; gap: 4px; padding: 5px 8px; border-radius: 8px; background: white; font-weight: 700; }
+    .phrase-item span { font-size: 1.25rem; }
+    .phrase-empty { color: #586d7b; }
+    .toolbar { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+    .toolbar button, .action { background: #e9eeea; }
+    .toolbar .speak, .action.primary { background: var(--blue); color: white; }
+    .bottom-actions { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; margin-top: 10px; }
+    .action { min-width: 0; padding: 9px 3px; font-size: .83rem; }
+    .action .symbol { display: block; font-size: 1.3rem; }
+    .action.yes { background: #f0e2b4; }
+    .action.no { background: #edc5c6; }
+    .action.want { background: #dcd5e8; }
+    .action.help { background: #c8dddc; }
+    .action.rest { background: #d4e0cf; }
+    .action.talk { background: #506b69; color: white; }
+    .panel { scroll-margin-top: 120px; margin-top: 18px; padding: clamp(14px, 2vw, 22px); border: 1px solid var(--line); border-radius: 18px; background: #ffffffeb; box-shadow: 0 4px 18px #253c3b08; backdrop-filter: blur(8px); }
+    .panel h2 { margin: 0 0 8px; font-size: 1.08rem; }
+    .panel p { line-height: 1.5; }
+    .settings-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
+    .install-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; margin-top: 12px; }
+    .install-card { display: flex; flex-direction: column; gap: 6px; padding: 14px; border: 1px solid var(--line); border-radius: 12px; background: #f8fafb; }
+    .install-card span { color: var(--muted); line-height: 1.45; }
+    .appearance-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; margin: 12px 0; }
+    .appearance-grid input[type="color"] { min-height: 48px; padding: 4px; }
+    .background-image-preview { display: block; width: min(100%, 520px); max-height: 220px; margin: 10px 0; border: 1px solid var(--line); border-radius: 12px; object-position: center; }
+    .check-option { display: flex; flex-direction: row; align-items: center; gap: 8px; }
+    .check-option input { width: 20px; min-height: 20px; }
+    label { display: flex; flex-direction: column; gap: 5px; font-weight: 700; }
+    input, select { width: 100%; min-height: 42px; padding: 8px; border: 1px solid #aebdc8; border-radius: 9px; background: white; }
+    input[type="file"] { padding: 6px; }
+    .field-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: end; }
+    .field-row label { flex: 1 1 180px; }
+    .message { min-height: 1.4em; color: var(--muted); }
+    .library-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 8px; margin-top: 10px; }
+    .custom-category-list { display: flex; flex-wrap: wrap; gap: 8px; padding: 0; list-style: none; }
+    .custom-category-list li { padding: 6px 10px; border: 1px solid var(--line); border-radius: 999px; background: #f8fafb; }
+    .library-item { display: grid; gap: 5px; justify-items: center; padding: 8px; border: 1px solid var(--line); border-radius: 10px; text-align: center; }
+    .library-item button { border: 0; border-radius: 8px; padding: 6px 9px; background: #ffdfdf; }
+    .library-item img { width: 64px; height: 64px; object-fit: contain; }
+    .hidden { display: none !important; }
+    .note { color: #526977; font-size: .86rem; }
+    .section-divider { height: 1px; margin: 22px 0; border: 0; background: var(--line); }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
+    }
+    @media (max-width: 720px) {
+      .site-nav { top: 56px; }
+    }
+    @media (max-width: 640px) {
+      .board { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .category[data-category="Necesito"] .tiles,
+      .category[data-category="Personas"] .tiles,
+      .category[data-category="Escuela"] .tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .bottom-actions { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    }
+    @media (max-width: 390px) {
+      main { padding: 8px; }
+      .topbar { padding: 9px 10px; }
+      .topbar button { padding: 9px; font-size: .8rem; }
+      .welcome { gap: 6px; padding: 7px; }
+      .welcome-home, .welcome-settings { width: 48px; min-width: 48px; min-height: 48px; }
+      .welcome-message { gap: 6px; }
+      .welcome .face { width: 42px; height: 42px; font-size: 1.5rem; }
+      .welcome p { display: none; }
+      .board { gap: 6px; }
+      .tiles { gap: 4px; padding: 4px; }
+      .tile { min-height: 74px; }
+      .tile .symbol { font-size: 1.8rem; }
+      .plans-intro { grid-template-columns: 1fr; }
+      .trial-badge { justify-self: start; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">CONVEXA</div>
+      <span class="spacer"></span>
+      <span id="connection" class="connection" role="status">Conectando…</span>
+    </header>
+
+    <main>
+      <nav class="site-nav" role="tablist" aria-label="Secciones de Convexa">
+        <button id="tab-communicator" type="button" role="tab" data-tab="communicator" aria-controls="communicator" aria-selected="true">Comunicador</button>
+        <button id="tab-library" type="button" role="tab" data-tab="library" aria-controls="library" aria-selected="false" tabindex="-1">Mi biblioteca</button>
+        <button id="tab-preferences" type="button" role="tab" data-tab="preferences" aria-controls="preferences" aria-selected="false" tabindex="-1">Preferencias</button>
+        <button id="tab-backup" type="button" role="tab" data-tab="backup" aria-controls="backup" aria-selected="false" tabindex="-1">Respaldo</button>
+      </nav>
+
+      <section id="communicator" role="tabpanel" aria-labelledby="tab-communicator" data-tab-panel>
+        <div class="welcome">
+          <button id="welcomeHome" class="welcome-home" type="button"><span class="symbol">🏠</span><br>Inicio</button>
+          <div class="welcome-message">
+            <span class="face" aria-hidden="true">👦🏻</span>
+            <div><h1>Hola, ¿qué quieres decir?</h1><p>Toca una imagen para escucharla y formar tu mensaje.</p></div>
+          </div>
+          <button id="settingsOpen" class="welcome-settings" type="button" aria-label="Abrir preferencias de comunicación"><span class="symbol" aria-hidden="true">⚙️</span><span class="label">Ajustes</span></button>
+        </div>
+        <div id="board" class="board" aria-label="Tablero de comunicación"></div>
+        <section class="phrase-box" aria-labelledby="messageTitle">
+          <h2 id="messageTitle">Mi mensaje</h2>
+          <div id="phrase" class="phrase" aria-live="polite"></div>
+          <div class="toolbar">
+            <button id="speakPhrase" class="speak" type="button">🔊 Hablar</button>
+            <button id="undoPhrase" type="button">⌫ Quitar último</button>
+            <button id="clearPhrase" type="button">Limpiar</button>
+          </div>
+        </section>
+        <nav class="bottom-actions" aria-label="Mensajes rápidos">
+          <button class="action" data-quick="Inicio"><span class="symbol">🏠</span>Inicio</button>
+          <button class="action yes" data-quick="Sí"><span class="symbol">🙂</span>Sí</button>
+          <button class="action no" data-quick="No"><span class="symbol">✖️</span>No</button>
+          <button class="action want" data-quick="Quiero"><span class="symbol">💬</span>Quiero</button>
+          <button class="action help" data-quick="Ayuda"><span class="symbol">🧍</span>Ayuda</button>
+          <button class="action rest" data-quick="Necesito descansar"><span class="symbol">⏸️</span>Descanso</button>
+          <button class="action talk" data-quick="Hablar"><span class="symbol">🔊</span>Hablar</button>
+        </nav>
+      </section>
+
+      <section id="preferences" class="panel" role="tabpanel" aria-labelledby="tab-preferences" data-tab-panel hidden>
+        <h2 id="settingsTitle">Preferencias de comunicación</h2>
+        <div class="settings-grid">
+          <label>Mostrar pictogramas
+            <select id="displayMode">
+              <option value="both">Imagen y palabra</option>
+              <option value="image">Solo imagen</option>
+              <option value="phrase">Imagen, palabra y frase</option>
+            </select>
+          </label>
+          <label>Al tocar, decir
+            <select id="speechMode">
+              <option value="word">La palabra</option>
+              <option value="phrase">La frase asociada</option>
+            </select>
+          </label>
+          <label>Voz en el dispositivo
+            <select id="voiceChoice"><option value="">Voz predeterminada</option></select>
+          </label>
+          <label>Velocidad de voz
+            <input id="voiceSpeed" type="range" min="0.6" max="1.3" step="0.1" value="1">
+          </label>
+        </div>
+        <p id="voiceStatus" class="note">La disponibilidad de voz sin conexión depende de las voces instaladas en el dispositivo.</p>
+        <div class="toolbar">
+          <button id="testVoice" type="button">Probar voz seleccionada</button>
+          <button id="testAllVoices" type="button">Probar todas las voces</button>
+          <button id="refreshVoices" type="button">Actualizar voces disponibles</button>
+        </div>
+        <hr class="section-divider">
+        <h2 id="appearanceTitle">Personaliza el tablero</h2>
+        <p>Personaliza el aspecto del tablero. Los cambios se guardan en este dispositivo.</p>
+        <p class="note">Para usar un color uniforme en los cuadros, activa la casilla y elige el color que prefieras.</p>
+        <div class="appearance-grid">
+          <label class="check-option"><input id="customTileColor" type="checkbox"> Usar un solo color para los cuadros</label>
+          <label>Color de los cuadros
+            <input id="tileColor" type="color" value="#f2d879" disabled>
+          </label>
+          <label>Color del fondo
+            <input id="backgroundColor" type="color" value="#f4f3ec">
+          </label>
+          <label>Forma de los cuadros
+            <select id="tileShape">
+              <option value="rounded">Redondeados</option>
+              <option value="square">Cuadrados</option>
+              <option value="circle">Circulares</option>
+            </select>
+          </label>
+          <label>Tamaño de los cuadros
+            <select id="tileSize">
+              <option value="small">Pequeños</option>
+              <option value="medium">Medianos</option>
+              <option value="large">Grandes</option>
+            </select>
+          </label>
+          <label>Tamaño de letra
+            <select id="tileFontSize">
+              <option value="small">Pequeña</option>
+              <option value="medium">Mediana</option>
+              <option value="large">Grande</option>
+            </select>
+          </label>
+          <label>Tipo de letra
+            <select id="tileFontFamily">
+              <option value="system">Sistema</option>
+              <option value="arial">Arial</option>
+              <option value="verdana">Verdana</option>
+              <option value="trebuchet">Trebuchet</option>
+              <option value="georgia">Georgia</option>
+              <option value="tahoma">Tahoma</option>
+              <option value="comic">Comic Sans MS</option>
+              <option value="courier">Courier New</option>
+              <option value="times">Times New Roman</option>
+              <option value="monospace">Monoespaciada</option>
+            </select>
+          </label>
+          <label>Imagen de fondo
+            <input id="backgroundImageFile" type="file" accept="image/png,image/jpeg,image/webp,image/gif">
+          </label>
+          <label>Ajuste de la imagen
+            <select id="backgroundImageFit">
+              <option value="cover">Cubrir el tablero</option>
+              <option value="contain">Mostrar imagen completa</option>
+              <option value="fill">Estirar al tablero</option>
+            </select>
+          </label>
+          <label>Visibilidad de la imagen
+            <input id="backgroundImageOpacity" type="range" min="20" max="100" step="5" value="100">
+            <output id="backgroundImageOpacityValue" for="backgroundImageOpacity">100%</output>
+          </label>
+        </div>
+        <img id="backgroundImagePreview" class="background-image-preview" alt="Vista previa de la imagen de fondo" hidden>
+        <p id="backgroundImageStatus" class="message" role="status">La imagen de fondo se guarda en este dispositivo.</p>
+        <div class="toolbar">
+          <button id="removeBackgroundImage" type="button">Quitar imagen de fondo</button>
+          <button id="resetAppearance" type="button">Restaurar apariencia original</button>
+        </div>
+        <hr class="section-divider">
+        <h2 id="installTitle">Instalar o desinstalar Convexa</h2>
+        <p>La misma aplicación funciona como PWA en Android y Mac; en Windows también puedes usar el ejecutable incluido en la descarga.</p>
+        <div class="toolbar">
+          <button id="installApp" class="speak hidden" type="button">Instalar Convexa</button>
+        </div>
+        <p id="installStatus" class="message" role="status">Para instalar en Android o Mac, abre esta página segura (HTTPS) en el navegador del dispositivo.</p>
+        <div class="install-grid">
+          <div class="install-card"><strong>Android</strong><span>Chrome → menú ⋮ → “Instalar aplicación” o “Añadir a pantalla de inicio”. Para quitarla: mantén pulsado el icono y elige “Desinstalar”; también puedes hacerlo en Ajustes → Aplicaciones.</span></div>
+          <div class="install-card"><strong>Windows</strong><span>En el ZIP, ejecuta windows\install-windows.ps1 para instalar Convexa en el menú Inicio; usa “Desinstalar Convexa” para quitarla. También puedes abrir windows\Convexa.exe directamente. Para instalar la versión web, usa Edge o Chrome; desinstálala desde la configuración del navegador. Consulta el README incluido.</span></div>
+          <div class="install-card"><strong>Mac</strong><span>Safari → Archivo → “Añadir al Dock” (macOS Sonoma o posterior); en Chrome, usa “Instalar página como aplicación”. Para quitarla, arrastra Convexa fuera del Dock y elimínala desde Aplicaciones o Chrome → Aplicaciones.</span></div>
+        </div>
+        <p class="note">La opción de desinstalación la controla el sistema o el navegador; Convexa no puede borrar por sí sola una aplicación instalada. Antes de desinstalar, exporta un respaldo de tus imágenes y palabras.</p>
+      </section>
+
+      <section id="library" class="panel" role="tabpanel" aria-labelledby="tab-library" data-tab-panel hidden>
+        <h2 id="libraryTitle">Mi biblioteca visual</h2>
+        <p class="note">Agrega fotografías propias o pictogramas descargados para disponer de ellos sin conexión.</p>
+        <h3>Crear un tablero</h3>
+        <p class="note">Los tableros nuevos aparecerán en la pantalla principal y se guardarán en este dispositivo.</p>
+        <form id="addCategoryForm">
+          <div class="settings-grid">
+            <label>Nombre del tablero
+              <input id="categoryName" type="text" maxlength="40" placeholder="Ej. Alimentos" required>
+            </label>
+            <label>Icono
+              <select id="categoryIcon" aria-label="Icono del tablero"></select>
+            </label>
+            <label>Color
+              <select id="categoryColor">
+                <option value="yellow">Amarillo</option>
+                <option value="blue">Azul</option>
+                <option value="pink">Rosa</option>
+                <option value="green">Verde</option>
+                <option value="purple">Morado</option>
+                <option value="teal">Turquesa</option>
+              </select>
+            </label>
+          </div>
+          <div class="toolbar"><button class="speak" type="submit">＋ Crear tablero</button></div>
+          <p id="categoryMessage" class="message" role="status"></p>
+        </form>
+        <ul id="customCategories" class="custom-category-list" aria-label="Tableros creados"></ul>
+        <h3>Añadir acciones</h3>
+        <p class="note">Agrega una palabra o acción con icono a cualquiera de tus tableros.</p>
+        <form id="addActionForm">
+          <div class="settings-grid">
+            <label>Tablero
+              <select id="actionCategory" required></select>
+            </label>
+            <label>Acción o palabra
+              <input id="actionName" type="text" maxlength="60" placeholder="Ej. Jugar" required>
+            </label>
+            <label>Frase asociada
+              <input id="actionPhrase" type="text" maxlength="140" placeholder="Ej. Quiero jugar">
+            </label>
+            <label>Icono
+              <select id="actionIcon" required></select>
+            </label>
+          </div>
+          <div class="toolbar"><button class="speak" type="submit">＋ Añadir acción</button></div>
+          <p id="actionMessage" class="message" role="status"></p>
+        </form>
+        <h3>Añadir pictograma con imagen</h3>
+        <form id="addForm">
+          <div class="settings-grid">
+            <label>Imagen
+              <input id="imageFile" type="file" accept="image/png,image/jpeg,image/webp,image/gif" required>
+            </label>
+            <label>Palabra
+              <input id="itemName" type="text" maxlength="60" placeholder="Ej. agua, mamá" required>
+            </label>
+            <label>Frase asociada
+              <input id="itemPhrase" type="text" maxlength="140" placeholder="Ej. Quiero tomar agua">
+            </label>
+            <label>Categoría
+              <select id="itemCategory" required></select>
+            </label>
+          </div>
+          <div class="toolbar"><button class="speak" type="submit">＋ Guardar imagen</button></div>
+          <p id="libraryMessage" class="message" role="status"></p>
+        </form>
+        <div id="libraryItems" class="library-list"></div>
+        <p class="note">Para usar recursos de ARASAAC, descárgalos desde <a href="https://arasaac.org/" target="_blank" rel="noopener noreferrer">su portal oficial</a> cuando tengas internet y verifica las condiciones de atribución y uso de cada recurso. Después cárgalos aquí.</p>
+      </section>
+
+      <section id="backup" class="panel" role="tabpanel" aria-labelledby="tab-backup" data-tab-panel hidden>
+        <h2 id="backupTitle">Respaldo</h2>
+        <p class="note">El vocabulario y las imágenes se conservan en este dispositivo. Exporta una copia para trasladarlos o recuperarlos.</p>
+        <div class="toolbar">
+          <button id="exportData" type="button">Descargar respaldo</button>
+          <label class="action">Restaurar respaldo<input id="importData" type="file" accept="application/json" hidden></label>
+        </div>
+        <p id="backupMessage" class="message" role="status"></p>
+      </section>
+    </main>
+  </div>
+
+  <script src="./app.js" defer></script>
+</body>
+</html>
